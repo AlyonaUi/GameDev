@@ -2,11 +2,12 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Zenject;
 
 [RequireComponent(typeof(Canvas))]
 public class InventoryUI : MonoBehaviour
 {
-    [Header("UI Elements (assign in Inspector)")]
+    [Header("UI Elements")]
     public GameObject inventoryPanel;
     public Image hammerIconImage;
     public TMP_Text hammerCountText;
@@ -14,6 +15,9 @@ public class InventoryUI : MonoBehaviour
     public TMP_Text axeCountText;
     public Image sawIconImage;
     public TMP_Text sawCountText;
+    
+    [Inject] private IEventBus injectedBus = null;
+    [Inject] private IInventoryService injectedInv = null;
     
     private IEventBus bus;
     private IInventoryService inv;
@@ -27,6 +31,16 @@ public class InventoryUI : MonoBehaviour
 
     private void OnEnable()
     {
+        if (injectedBus != null && injectedInv != null)
+        {
+            bus = injectedBus;
+            inv = injectedInv;
+            SubscribeToBus();
+            Debug.Log("InventoryUI: subscribed to InventoryChangedEvent via Zenject injection");
+            ApplyCounts(inv.GetAllCounts());
+            return;
+        }
+
         TryEnsureSubscription();
     }
 
@@ -45,12 +59,10 @@ public class InventoryUI : MonoBehaviour
         if (inventoryPanel != null)
             inventoryPanel.SetActive(false);
         
-        if (inv == null) inv = ServiceLocator.Get<IInventoryService>();
+        if (inv == null && injectedInv != null) inv = injectedInv;
         if (inv != null)
-        {
             ApplyCounts(inv.GetAllCounts());
-        }
-        
+
         ApplyIconsFromProvider();
     }
 
@@ -66,7 +78,7 @@ public class InventoryUI : MonoBehaviour
     private void TryEnsureSubscription()
     {
         if (subscribed) return;
-
+        
         bus = ServiceLocator.Get<IEventBus>();
         inv = ServiceLocator.Get<IInventoryService>();
 
@@ -74,7 +86,7 @@ public class InventoryUI : MonoBehaviour
         {
             bus.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
             subscribed = true;
-            Debug.Log("InventoryUI: subscribed to InventoryChangedEvent");
+            Debug.Log("InventoryUI: subscribed to InventoryChangedEvent (via ServiceLocator)");
             if (inv != null)
                 ApplyCounts(inv.GetAllCounts());
             else
@@ -124,10 +136,19 @@ public class InventoryUI : MonoBehaviour
         subscribed = false;
         bus = null;
     }
-
+    
+    private void SubscribeToBus()
+    {
+        if (bus != null && !subscribed)
+        {
+            bus.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
+            subscribed = true;
+        }
+    }
+    
     private void OnInventoryChanged(InventoryChangedEvent evt)
     {
-        Debug.Log("InventoryUI: received InventoryChangedEvent");
+        Debug.Log("InventoryUI: received InventoryChangedEvent -> " + string.Join(",", evt.counts));
         ApplyCounts(evt.counts);
     }
 

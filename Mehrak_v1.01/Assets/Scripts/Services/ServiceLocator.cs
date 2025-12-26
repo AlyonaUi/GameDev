@@ -9,7 +9,7 @@ public static class ServiceLocator
     {
         var type = typeof(T);
         if (services.ContainsKey(type))
-            services[type] = service;   // Обновляем существующий
+            services[type] = service;
         else
             services.Add(type, service);
     }

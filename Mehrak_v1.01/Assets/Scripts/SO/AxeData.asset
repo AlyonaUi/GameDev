@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AxeData
   m_EditorClassIdentifier: Assembly-CSharp::ToolDataSO
   toolType: 1
-  sprite: {fileID: 5150076738393484521, guid: 0499f95d12371d74cb7f73f45bf06fa5, type: 3}
+  sprite: {fileID: 6145849641697027805, guid: 519069a81c30aaf4994ffda22edb4e3d, type: 3}
   speed: 1
   rotationSpeed: 90
   maxCount: 5

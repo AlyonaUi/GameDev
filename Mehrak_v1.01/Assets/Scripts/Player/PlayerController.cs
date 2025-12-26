@@ -1,19 +1,21 @@
+using System.Collections;
 using UnityEngine;
-
-/// Top-down player controller.
-/// Читает ввод в Update и перемещает Rigidbody2D в FixedUpdate.
+using Zenject;
 
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Collider2D))]
 public class PlayerController : MonoBehaviour, IPlayer
 {
     [SerializeField] private float speed = 5f;
 
+    [InjectOptional] private LevelBounds injectedLevelBounds = null;
+    [SerializeField] private LevelBounds levelBoundsFallback = null;
+
     private Rigidbody2D rb;
-
-    // Сохранённый ввод, используется в FixedUpdate
     private Vector2 moveInput = Vector2.zero;
-
-    // IPlayer реализация
+    private LevelBounds levelBounds;
+    private Vector2 playerHalfSize = new Vector2(0.5f, 0.5f);
+    
     public Vector2 Position => rb != null ? rb.position : (Vector2)transform.position;
     public Transform Transform => transform;
     public float Speed => speed;
@@ -22,39 +24,91 @@ public class PlayerController : MonoBehaviour, IPlayer
     {
         rb = GetComponent<Rigidbody2D>();
         
-        rb.bodyType = RigidbodyType2D.Kinematic;    // Принудительно устанавливаем основные настройки
+        rb.bodyType = RigidbodyType2D.Dynamic;
         rb.freezeRotation = true;
         rb.gravityScale = 0f;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        gameObject.tag = "Player";
-
-        // Регистрируем игрока как IPlayer в ServiceLocator (если нужно)
+        
         ServiceLocator.Register<IPlayer>(this);
+
+        levelBounds = injectedLevelBounds != null ? injectedLevelBounds : levelBoundsFallback;
+        if (levelBounds == null)
+            levelBounds = FindObjectOfType<LevelBounds>();
     }
 
-    private void Update()
+    private void Start()
     {
-        // Читаем ввод в Update
-        var input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
-        moveInput = input;
+        StartCoroutine(Init());
     }
 
-    private void FixedUpdate() // Перемещаем Rigidbody в FixedUpdate с фиксированным интервалом (обычно 0.02f)
+    private IEnumerator Init()
     {
-        if (rb != null)
+        yield return null;
+        
+        var cols = GetComponents<Collider2D>();
+        Collider2D usedCol = null;
+        if (cols != null && cols.Length > 0)
         {
-            if (moveInput.sqrMagnitude > 0.0001f)   // Вычисляем квадрат длины вектора быстрее, игнорируем микро-ввод
+            foreach (var c in cols)
             {
-                var nextPos = rb.position + moveInput * speed * Time.fixedDeltaTime;
-                rb.MovePosition(nextPos);
+                if (!c.isTrigger)
+                {
+                    usedCol = c;
+                    break;
+                }
+            }
+            if (usedCol == null) usedCol = cols[0];
+        }
+
+        if (usedCol != null)
+        {
+            var ext = usedCol.bounds.extents;
+            playerHalfSize = new Vector2(Mathf.Abs(ext.x), Mathf.Abs(ext.y));
+        }
+        
+        if (levelBounds != null)
+        {
+            Vector2 clamped = levelBounds.ClampPosition(rb.position, playerHalfSize);
+            if (clamped != rb.position)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.position = clamped;
+                transform.position = clamped;
             }
         }
     }
 
-    private void OnDestroy()
+    private void Update()
     {
-        // опционально: если надо
+        var input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        if (input.sqrMagnitude > 1f) input.Normalize();
+        moveInput = input;
+    }
+
+    private void FixedUpdate()
+    {
+        if (rb == null) return;
+
+        if (moveInput.sqrMagnitude > 0.0001f)
+        {
+            var nextPos = rb.position + moveInput * speed * Time.fixedDeltaTime;
+            if (levelBounds != null)
+                nextPos = levelBounds.ClampPosition(nextPos, playerHalfSize);
+            rb.MovePosition(nextPos);
+        }
+        else
+        {
+            if (levelBounds != null)
+            {
+                var clamped = levelBounds.ClampPosition(rb.position, playerHalfSize);
+                if (clamped != rb.position)
+                {
+                    rb.linearVelocity = Vector2.zero;
+                    rb.position = clamped;
+                    transform.position = clamped;
+                }
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SawData
   m_EditorClassIdentifier: Assembly-CSharp::ToolDataSO
   toolType: 0
-  sprite: {fileID: -5341111275768528869, guid: 550acc20b39ed4e4ab6dfa2b8856d694, type: 3}
+  sprite: {fileID: -1415866275744577363, guid: 519069a81c30aaf4994ffda22edb4e3d, type: 3}
   speed: 1
   rotationSpeed: 90
   maxCount: 5

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameConfigSO
   spawnAreaCenter: {x: 0, y: 0}
-  spawnAreaSize: {x: 10, y: 6}
+  spawnAreaSize: {x: 20, y: 20}
   minToolDistance: 2
   minDistanceFromPlayer: 4
   spawnInterval: 2

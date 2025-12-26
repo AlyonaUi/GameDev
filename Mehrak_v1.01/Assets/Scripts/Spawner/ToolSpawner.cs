@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class ToolSpawner : MonoBehaviour
 {
-    [Header("Fallbacks (optional)")]
+    [Header("Fallbacks")]
     public ToolFactory factory;     
     public GameConfigSO config;     
 

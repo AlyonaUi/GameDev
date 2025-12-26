@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class EventBus : IEventBus
 {
@@ -28,10 +29,20 @@ public class EventBus : IEventBus
     public void Publish<T>(T evt)
     {
         var t = typeof(T);
+        Debug.Log($"EventBus.Publish<{t.Name}> called");
+
         if (subscribers.TryGetValue(t, out var d))
         {
             var handler = d as Action<T>;
-            handler?.Invoke(evt);
+            if (handler != null)
+            {
+                handler.Invoke(evt);
+                Debug.Log($"EventBus: invoked handlers for {t.Name}");
+            }
+        }
+        else
+        {
+            Debug.Log($"EventBus: no handlers for {t.Name}");
         }
     }
 }

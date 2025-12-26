@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: HammerData
   m_EditorClassIdentifier: Assembly-CSharp::ToolDataSO
   toolType: 2
-  sprite: {fileID: -2302995527135295412, guid: 4279d97e93edc804f9f944936a6e282d, type: 3}
+  sprite: {fileID: -5732782399450629475, guid: 519069a81c30aaf4994ffda22edb4e3d, type: 3}
   speed: 1
   rotationSpeed: 90
   maxCount: 5

@@ -1,14 +1,11 @@
 using System;
 using UnityEngine;
 
-/// InventoryChangedEvent: публикуется при каждом изменении (копия массива counts)
 public struct InventoryChangedEvent
 {
     public int[] counts;
 }
 
-/// Простой сервис инвентаря — хранит числа по типам инструментов,
-/// подписывается на ToolCollectedEvent и публикует InventoryChangedEvent.
 public class InventoryService : IInventoryService
 {
     private readonly int[] counts;
@@ -27,7 +24,6 @@ public class InventoryService : IInventoryService
         this.bus = bus;
         counts = new int[Enum.GetNames(typeof(ToolType)).Length];
 
-        // Подписываемся на событие сбора инструментов
         bus.Subscribe<ToolCollectedEvent>(OnToolCollected);
         Debug.Log("InventoryService: subscribed to ToolCollectedEvent");
     }
@@ -39,8 +35,7 @@ public class InventoryService : IInventoryService
             Debug.LogWarning("InventoryService: ToolCollectedEvent.tool is null");
             return;
         }
-
-        // Пытаемся получить тип инструмента из ToolController
+        
         try
         {
             var tc = evt.tool as ToolController;
@@ -74,14 +69,17 @@ public class InventoryService : IInventoryService
         if (counts[idx] < 99)
         {
             counts[idx] = Mathf.Max(0, counts[idx] + amount);
-
-            // публикуем копию массива
+            
+            Debug.Log($"InventoryService.Add: type={type} newCount={counts[idx]}");
+            
             var copy = (int[])counts.Clone();
             bus.Publish(new InventoryChangedEvent { counts = copy });
+
+            Debug.Log("InventoryService.Add: InventoryChangedEvent published");
+            
         }
     }
     
-    // Проверяет, можно ли добавить указанное количество
     public bool CanAddMore(ToolType type, int amount = 1)
     {
         var idx = (int)type;
@@ -90,7 +88,6 @@ public class InventoryService : IInventoryService
         return counts[idx] + amount <= maxCapacity;
     }
     
-    // Проверяет, достигнут ли максимум для данного типа
     public bool IsFull(ToolType type)
     {
         return GetCount(type) >= maxCapacity;

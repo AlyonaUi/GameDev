@@ -2,9 +2,8 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 3
-  tags:
-  - Tool
+  serializedVersion: 2
+  tags: []
   layers:
   - Default
   - TransparentFX
@@ -39,17 +38,6 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: Background
-    uniqueID: 2463800909
-    locked: 0
-  - name: Items
-    uniqueID: 2474251419
-    locked: 0
-  - name: Player
-    uniqueID: 2528660889
-    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
-  m_RenderingLayers:
-  - Default

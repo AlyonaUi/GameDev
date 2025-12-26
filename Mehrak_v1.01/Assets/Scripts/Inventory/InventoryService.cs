@@ -13,6 +13,8 @@ public class InventoryService : IInventoryService
 {
     private readonly int[] counts;
     private readonly IEventBus bus;
+    
+    public const int maxCapacity = 100;
 
     public InventoryService(IEventBus bus)
     {
@@ -48,8 +50,15 @@ public class InventoryService : IInventoryService
                 return;
             }
 
-            Add(tc.ToolType, 1);
-            Debug.Log($"InventoryService: collected {tc.ToolType}, newCount = {GetCount(tc.ToolType)}");
+            if (CanAddMore(tc.ToolType))
+            {
+                Add(tc.ToolType, 1);
+                Debug.Log($"InventoryService: collected {tc.ToolType}, newCount = {GetCount(tc.ToolType)}");
+            }
+            else
+            {
+                Debug.Log($"InventoryService: cannot collect {tc.ToolType}, inventory full (max {maxCapacity})");
+            }
         }
         catch (Exception ex)
         {
@@ -61,11 +70,30 @@ public class InventoryService : IInventoryService
     {
         var idx = (int)type;
         if (idx < 0 || idx >= counts.Length) return;
-        counts[idx] = Mathf.Max(0, counts[idx] + amount);
 
-        // публикуем копию массива
-        var copy = (int[])counts.Clone();
-        bus.Publish(new InventoryChangedEvent { counts = copy });
+        if (counts[idx] < 99)
+        {
+            counts[idx] = Mathf.Max(0, counts[idx] + amount);
+
+            // публикуем копию массива
+            var copy = (int[])counts.Clone();
+            bus.Publish(new InventoryChangedEvent { counts = copy });
+        }
+    }
+    
+    // Проверяет, можно ли добавить указанное количество
+    public bool CanAddMore(ToolType type, int amount = 1)
+    {
+        var idx = (int)type;
+        if (idx < 0 || idx >= counts.Length) return false;
+        
+        return counts[idx] + amount <= maxCapacity;
+    }
+    
+    // Проверяет, достигнут ли максимум для данного типа
+    public bool IsFull(ToolType type)
+    {
+        return GetCount(type) >= maxCapacity;
     }
 
     public int GetCount(ToolType type)

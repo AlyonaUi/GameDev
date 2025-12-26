@@ -1,0 +1,3 @@
+repository "MekrakTest/MekrakTest@10171536184342@cloud"
+  path "/"
+    smartbranch "/main/FinalVersion"

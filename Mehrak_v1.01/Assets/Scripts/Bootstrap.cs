@@ -1,21 +1,19 @@
 using UnityEngine;
 
-/// Bootstrapper: регистрирует сервисы в Awake, создает InventoryService и регистрирует его,
-/// а Prewarm фабрики вызывает в Start.
 public class Bootstrap : MonoBehaviour
 {
     [Header("Assign in Inspector")]
+    [SerializeField] private IPlayer _player;
     public ToolFactory toolFactory;
     public GameConfigSO gameConfig;
-
     private IEventBus bus;
     private IToolPool pool;
     private InventoryService inventoryService;
-
+    
     private void Awake()
     {
         ServiceLocator.Clear();
-
+        
         // Регистрируем IEventBus
         bus = new EventBus();
         ServiceLocator.Register<IEventBus>(bus);
@@ -52,8 +50,10 @@ public class Bootstrap : MonoBehaviour
         ServiceLocator.Register<IInventoryService>(inventoryService);
         
         bus.Subscribe<ToolCollectedEvent>(OnToolCollected);
+        
+        ServiceLocator.Register<IPlayer>(_player);
     }
-
+    
     private void Start()
     {
         var factoryInterface = ServiceLocator.Get<IToolFactory>();

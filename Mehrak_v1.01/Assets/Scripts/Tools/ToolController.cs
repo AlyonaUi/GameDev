@@ -17,6 +17,8 @@ public abstract class ToolController : MonoBehaviour, ITool
     public GameObject GameObject => this.gameObject;
 
     public ToolType ToolType => type;
+    
+    protected bool canBeCollected = true;
 
     public virtual void Initialize(ToolType t, ToolDataSO toolData)
     {
@@ -26,6 +28,11 @@ public abstract class ToolController : MonoBehaviour, ITool
         pool = ServiceLocator.Get<IToolPool>();
         events = ServiceLocator.Get<IEventBus>();
         gameObject.tag = "Tool";
+        
+        if (events != null)
+        {
+            events.Subscribe<InventoryChangedEvent>(OnInventoryChanged);
+        }
         
         view = GetComponent<IToolView>();
         if (view == null) view = GetComponentInChildren<IToolView>();
@@ -37,6 +44,37 @@ public abstract class ToolController : MonoBehaviour, ITool
             var sr = GetComponent<SpriteRenderer>();
             if (sr != null && data != null) sr.sprite = data.sprite;
         }
+        
+        CheckIfCanBeCollected();
+    }
+    
+    // Обработчик изменений инвентаря
+    private void OnInventoryChanged(InventoryChangedEvent evt)
+    {
+        CheckIfCanBeCollected();
+    }
+    
+    protected virtual void CheckIfCanBeCollected()
+    {
+        if (events == null) return;
+        
+        try
+        {
+            var inventory = ServiceLocator.Get<IInventoryService>();
+            if (inventory != null)
+            {
+                canBeCollected = !inventory.IsFull(type);
+                
+                if (!canBeCollected)
+                {
+                    Debug.Log($"Tool {type} cannot be collected - inventory full");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"ToolController.CheckIfCanBeCollected error: {ex.Message}");
+        }
     }
 
     public virtual void OnSpawn()
@@ -44,10 +82,20 @@ public abstract class ToolController : MonoBehaviour, ITool
         if (view != null) view.Show();
         if (col != null) col.enabled = true;
         gameObject.SetActive(true);
+        CheckIfCanBeCollected();
     }
 
     public virtual void Collect()
     {
+        
+        // Проверяем, можно ли собирать
+        if (!canBeCollected)
+        {
+            Debug.Log($"Cannot collect {type} - inventory full");
+            // Можно воспроизвести звук отказа или показать анимацию
+            return;
+        }
+        
         if (col != null) col.enabled = false;
 
         if (view != null)
@@ -80,9 +128,18 @@ public abstract class ToolController : MonoBehaviour, ITool
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
-        {
+        if (other.CompareTag("Player") && canBeCollected)
+        { 
             Collect();
+        }
+    }
+    
+    // Отписываемся от событий при уничтожении
+    private void OnDestroy()
+    {
+        if (events != null)
+        {
+            events.Unsubscribe<InventoryChangedEvent>(OnInventoryChanged);
         }
     }
 }
